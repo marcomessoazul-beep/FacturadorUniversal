@@ -1,0 +1,66 @@
+name: Build Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          architecture: x64
+
+      - name: Instalar herramientas Windows
+        shell: powershell
+        run: |
+          choco install tesseract innosetup -y --no-progress
+
+      - name: Instalar dependencias Python
+        shell: powershell
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Instalar Chromium de Playwright dentro del paquete
+        shell: powershell
+        run: |
+          $env:PLAYWRIGHT_BROWSERS_PATH="0"
+          python -m playwright install chromium
+
+      - name: Construir aplicación Windows
+        shell: powershell
+        run: |
+          pyinstaller --noconfirm --clean FacturadorUniversal.spec
+
+      - name: Construir instalador
+        shell: powershell
+        run: |
+          $iscc = Get-ChildItem `
+            -Path "C:\Program Files","C:\Program Files (x86)" `
+            -Filter "ISCC.exe" -Recurse -ErrorAction SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty FullName
+
+          if (-not $iscc) {
+            throw "No se encontró ISCC.exe de Inno Setup."
+          }
+
+          New-Item -ItemType Directory -Force -Path "installer" | Out-Null
+          & $iscc "installer.iss"
+
+      - name: Publicar instalador
+        uses: actions/upload-artifact@v4
+        with:
+          name: FacturadorUniversal-Windows-Installer
+          path: installer/FacturadorUniversal-Setup.exe
+          if-no-files-found: error
+          retention-days: 30

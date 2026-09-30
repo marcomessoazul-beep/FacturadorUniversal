@@ -1,0 +1,10 @@
+{
+  "nota": "La aplicación usa SQLite y la configuración se guarda desde la interfaz.",
+  "merchant_adapters": {
+    "Walmart": "futuro modulo especifico",
+    "Sam's Club": "futuro modulo especifico",
+    "Costco": "futuro modulo especifico",
+    "Farmacias del Ahorro": "futuro modulo especifico",
+    "Abarrotes El Zorro": "futuro modulo especifico"
+  }
+}
